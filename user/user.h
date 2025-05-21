@@ -1,4 +1,15 @@
+#include "kernel/types.h"
+typedef unsigned int uint;
+typedef unsigned short ushort;
+typedef unsigned char uchar;
+typedef uint64 pde_t;
+
 struct stat;
+//
+
+int setscheduler(int);
+int getschedmetrics(uint64);
+int setpriority(int, int);
 
 // system calls
 int fork(void);
@@ -22,6 +33,10 @@ int getpid(void);
 char* sbrk(int);
 int sleep(int);
 int uptime(void);
+int kbdint(void);
+int countsyscall(void);
+int rand(void);
+int getppid(void);
 
 // ulib.c
 int stat(const char*, struct stat*);
@@ -38,6 +53,29 @@ int atoi(const char*);
 int memcmp(const void *, const void *, uint);
 void *memcpy(void *, const void *, uint);
 
+
+
+struct pstat;
+int getptable(int nproc, struct pstat *buffer);
+
+
+
+
 // umalloc.c
 void* malloc(uint);
 void free(void*);
+
+
+#ifndef USER_H
+#define USER_H
+struct datetime{
+  int second;
+  int minute;
+  int hour;
+  int day;
+  int month;
+  int year;
+};
+
+int datetime(struct datetime *dt);
+#endif

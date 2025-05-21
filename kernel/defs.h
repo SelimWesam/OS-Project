@@ -9,6 +9,11 @@ struct sleeplock;
 struct stat;
 struct superblock;
 
+uint64 sys_randd(void);
+
+
+// Add in kernel/defs.h (with other process-related declarations)
+extern struct ptable_t ptable;  // Add with other process-related externs
 // bio.c
 void            binit(void);
 struct buf*     bread(uint, uint);
@@ -16,6 +21,9 @@ void            brelse(struct buf*);
 void            bwrite(struct buf*);
 void            bpin(struct buf*);
 void            bunpin(struct buf*);
+
+int datetime(uint64 addr);
+int getptable(int nproc, char *buffer);
 
 // console.c
 void            consoleinit(void);
@@ -136,6 +144,7 @@ char*           strncpy(char*, const char*, int);
 // syscall.c
 void            argint(int, int*);
 int             argstr(int, char*, int);
+uint64          argraw(int);
 void            argaddr(int, uint64 *);
 int             fetchstr(uint64, char*, int);
 int             fetchaddr(uint64, uint64*);
@@ -179,6 +188,8 @@ void            plicinit(void);
 void            plicinithart(void);
 int             plic_claim(void);
 void            plic_complete(int);
+
+
 
 // virtio_disk.c
 void            virtio_disk_init(void);

@@ -5,6 +5,7 @@
 #include "spinlock.h"
 #include "proc.h"
 #include "defs.h"
+#include "pstat.h"
 
 struct cpu cpus[NCPU];
 
@@ -25,7 +26,7 @@ extern char trampoline[]; // trampoline.S
 // memory model when using p->parent.
 // must be acquired before any p->lock.
 struct spinlock wait_lock;
-
+int current_scheduler = 0;
 // Allocate a page for each process's kernel stack.
 // Map it high in memory, followed by an invalid
 // guard page.
@@ -33,7 +34,7 @@ void
 proc_mapstacks(pagetable_t kpgtbl)
 {
   struct proc *p;
-  
+
   for(p = proc; p < &proc[NPROC]; p++) {
     char *pa = kalloc();
     if(pa == 0)
@@ -48,7 +49,7 @@ void
 procinit(void)
 {
   struct proc *p;
-  
+
   initlock(&pid_lock, "nextpid");
   initlock(&wait_lock, "wait_lock");
   for(p = proc; p < &proc[NPROC]; p++) {
@@ -61,6 +62,53 @@ procinit(void)
 // Must be called with interrupts disabled,
 // to prevent race with process being moved
 // to a different CPU.
+
+int
+getptable(int nproc, char *buffer)
+{
+    struct proc *p;
+    struct pstat pstat;
+    int count = 0;
+
+    if(nproc < 1 || !buffer)
+        return 0;
+
+    // Iterate through all processes
+    for(p = proc; p < &proc[NPROC] && count < nproc; p++) {
+        acquire(&p->lock);  // Lock individual process
+
+        if(p->state == UNUSED) {
+            release(&p->lock);
+            continue;
+        }
+
+        pstat.pid = p->pid;
+        pstat.ppid = p->parent ? p->parent->pid : 0;
+
+        switch(p->state) {
+            case UNUSED:    safestrcpy(pstat.state, "UNUSED", sizeof(pstat.state)); break;
+            case SLEEPING:  safestrcpy(pstat.state, "SLEEPING", sizeof(pstat.state)); break;
+            case RUNNABLE:  safestrcpy(pstat.state, "RUNNABLE", sizeof(pstat.state)); break;
+            case RUNNING:   safestrcpy(pstat.state, "RUNNING", sizeof(pstat.state)); break;
+            case ZOMBIE:    safestrcpy(pstat.state, "ZOMBIE", sizeof(pstat.state)); break;
+            default:        safestrcpy(pstat.state, "UNKNOWN", sizeof(pstat.state)); break;
+        }
+
+        safestrcpy(pstat.name, p->name, sizeof(pstat.name));
+        pstat.sz = p->sz;
+
+        release(&p->lock);  // Release process lock
+
+        if(copyout(myproc()->pagetable, (uint64)buffer + count * sizeof(pstat),
+                   (char *)&pstat, sizeof(pstat)) < 0) {
+            return 0;
+        }
+
+        count++;
+    }
+
+    return 1;
+}
 int
 cpuid()
 {
@@ -93,7 +141,7 @@ int
 allocpid()
 {
   int pid;
-  
+
   acquire(&pid_lock);
   pid = nextpid;
   nextpid = nextpid + 1;
@@ -236,7 +284,7 @@ userinit(void)
 
   p = allocproc();
   initproc = p;
-  
+
   // allocate one user page and copy initcode's instructions
   // and data into it.
   uvmfirst(p->pagetable, initcode, sizeof(initcode));
@@ -372,7 +420,7 @@ exit(int status)
 
   // Parent might be sleeping in wait().
   wakeup(p->parent);
-  
+
   acquire(&p->lock);
 
   p->xstate = status;
@@ -428,7 +476,7 @@ wait(uint64 addr)
       release(&wait_lock);
       return -1;
     }
-    
+
     // Wait for a child to exit.
     sleep(p, &wait_lock);  //DOC: wait-sleep
   }
@@ -548,7 +596,7 @@ void
 sleep(void *chan, struct spinlock *lk)
 {
   struct proc *p = myproc();
-  
+
   // Must acquire p->lock in order to
   // change p->state and then call sched.
   // Once we hold p->lock, we can be
@@ -627,7 +675,7 @@ int
 killed(struct proc *p)
 {
   int k;
-  
+
   acquire(&p->lock);
   k = p->killed;
   release(&p->lock);

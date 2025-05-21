@@ -14,7 +14,7 @@
 
 // from FreeBSD.
 int
-do_rand(unsigned long *ctx)
+do_randd(unsigned long *ctx)
 {
 /*
  * Compute x = (7^5 * x) mod (2^31 - 1)
@@ -39,12 +39,12 @@ do_rand(unsigned long *ctx)
     return (x);
 }
 
-unsigned long rand_next = 1;
+unsigned long randd_next = 1;
 
 int
-rand(void)
+d(void)
 {
-    return (do_rand(&rand_next));
+    return (do_randd(&randd_next));
 }
 
 void
@@ -61,7 +61,7 @@ go(int which_child)
     exit(1);
   }
   chdir("/");
-  
+
   while(1){
     iters++;
     if((iters % 500) == 0)
@@ -298,14 +298,14 @@ iter()
 {
   unlink("a");
   unlink("b");
-  
+
   int pid1 = fork();
   if(pid1 < 0){
     printf("grind: fork failed\n");
     exit(1);
   }
   if(pid1 == 0){
-    rand_next ^= 31;
+    randd_next ^= 31;
     go(0);
     exit(0);
   }
@@ -316,7 +316,7 @@ iter()
     exit(1);
   }
   if(pid2 == 0){
-    rand_next ^= 7177;
+    randd_next ^= 7177;
     go(1);
     exit(0);
   }
@@ -346,6 +346,6 @@ main()
       wait(0);
     }
     sleep(20);
-    rand_next += 1;
+    randd_next += 1;
   }
 }

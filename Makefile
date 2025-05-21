@@ -21,6 +21,7 @@ OBJS = \
   $K/bio.o \
   $K/fs.o \
   $K/log.o \
+  $K/sysutil.o \
   $K/sleeplock.o \
   $K/file.o \
   $K/pipe.o \
@@ -56,6 +57,7 @@ LD = $(TOOLPREFIX)ld
 OBJCOPY = $(TOOLPREFIX)objcopy
 OBJDUMP = $(TOOLPREFIX)objdump
 
+
 CFLAGS = -Wall -Werror -O -fno-omit-frame-pointer -ggdb -gdwarf-2
 CFLAGS += -MD
 CFLAGS += -mcmodel=medany
@@ -77,6 +79,8 @@ endif
 ifneq ($(shell $(CC) -dumpspecs 2>/dev/null | grep -e '[^f]nopie'),)
 CFLAGS += -fno-pie -nopie
 endif
+CFLAGS += -DBOOT_EPOCH=$(shell date +%s)
+
 
 LDFLAGS = -z max-page-size=4096
 
@@ -139,6 +143,22 @@ UPROGS=\
 	$U/_grind\
 	$U/_wc\
 	$U/_zombie\
+	$U/_add\
+	$U/_kbd\
+	$U/_date\
+	$U/_count\
+	$U/_getppid\
+	$U/_rand\
+	$U/_pstat\
+	$U/_fact\
+	$U/_touch\
+	$U/_sleep\
+	$U/_find\
+	$U/_mv\
+	$U/_cp\
+	$U/_test_fcfs\
+	$U/_test_priority\
+
 
 fs.img: mkfs/mkfs README $(UPROGS)
 	mkfs/mkfs fs.img README $(UPROGS)
@@ -162,6 +182,8 @@ QEMUGDB = $(shell if $(QEMU) -help | grep -q '^-gdb'; \
 ifndef CPUS
 CPUS := 3
 endif
+
+
 
 QEMUOPTS = -machine virt -bios none -kernel $K/kernel -m 128M -smp $(CPUS) -nographic
 QEMUOPTS += -global virtio-mmio.force-legacy=false

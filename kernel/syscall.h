@@ -20,3 +20,12 @@
 #define SYS_link   19
 #define SYS_mkdir  20
 #define SYS_close  21
+#define SYS_kbdint 22
+#define SYS_getptable 23
+#define SYS_datetime 24
+#define SYS_countsyscall 25
+#define SYS_rand 26
+#define SYS_getppid 27
+#define SYS_setscheduler 28
+#define SYS_getschedmetrics 29
+#define SYS_setpriority 30

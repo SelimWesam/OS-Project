@@ -2,7 +2,10 @@
 #include "kernel/stat.h"
 #include "kernel/fcntl.h"
 #include "user/user.h"
+#include "kernel/syscall.h"
 
+
+extern int syscall(int, ...);
 //
 // wrapper so that it's OK if main() does not call exit().
 //

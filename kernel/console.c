@@ -30,6 +30,7 @@
 // called by printf(), and to echo input characters,
 // but not from write().
 //
+int kbd_int_count=0;
 void
 consputc(int c)
 {
@@ -43,7 +44,7 @@ consputc(int c)
 
 struct {
   struct spinlock lock;
-  
+
   // input
 #define INPUT_BUF_SIZE 128
   char buf[INPUT_BUF_SIZE];
@@ -136,7 +137,7 @@ void
 consoleintr(int c)
 {
   acquire(&cons.lock);
-
+  kbd_int_count ++;
   switch(c){
   case C('P'):  // Print process list.
     procdump();
@@ -174,7 +175,7 @@ consoleintr(int c)
     }
     break;
   }
-  
+
   release(&cons.lock);
 }
 
